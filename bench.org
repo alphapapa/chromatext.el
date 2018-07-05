@@ -1,0 +1,28 @@
+#+BEGIN_SRC elisp
+  (with-current-buffer argh-buffer
+    (chromatext-remove-colors))
+  (elp-profile 1 '(chromatext- color- looking- point- line-)
+    (with-current-buffer argh-buffer
+      (chromatext-chromatize-region)))
+#+END_SRC
+
+#+RESULTS:
+| Function                     | Times called |   Total time | Average time |
+|------------------------------+--------------+--------------+--------------|
+| chromatext-chromatize-region |            1 |  0.757909456 |  0.757909456 |
+| chromatext--chromatize-lines |            1 |  0.757826762 |  0.757826762 |
+| line-move-visual             |           41 | 0.7217099429 | 0.0176026815 |
+| chromatext--chromatize-words |           31 | 0.0319049930 | 0.0010291933 |
+| chromatext--colorize-region  |          130 | 0.0182352149 | 0.0001402708 |
+| color-name-to-rgb            |           62 | 0.0028425710 | 4.584...e-05 |
+| chromatext--count-words      |           31 | 0.0023484429 | 7.575...e-05 |
+| color-rgb-to-hex             |          130 | 0.0017420780 | 1.340...e-05 |
+| color-values                 |          124 | 0.0010780770 | 8.694...e-06 |
+| point-at-bol                 |           31 | 0.0008360110 | 2.696...e-05 |
+| point-at-eol                 |           31 |  0.000799062 | 2.577...e-05 |
+| color-gradient               |           31 |  0.000532126 | 1.716...e-05 |
+| line-beginning-position      |           31 | 0.0004285470 | 1.382...e-05 |
+| line-end-position            |           31 | 0.0004078820 | 1.315...e-05 |
+| looking-at                   |           41 |  0.000347255 | 8.469...e-06 |
+| point-min                    |           33 | 0.0001558140 | 4.721...e-06 |
+| point-max                    |            1 |    4.889e-06 |    4.889e-06 |

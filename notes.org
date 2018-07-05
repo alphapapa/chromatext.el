@@ -1,0 +1,46 @@
+
+
+* Chromatext
+
+[2018-07-04 Wed 22:57]  Like the BeeReader thing but for Emacs.
+
+** Implementation
+
+Basically, a function takes these arguments;
+
++  Range: all text within this range is colorized.
++  Advance-fn:  Function called to advance to the next element, e.g. ~forward-word~ or ~forward-line~.
++  Colors: A cycling list of colors.
+
+When using ~visual-line-mode~, the advance-fn should use the appropriate function, and will need to reapply the colorization when the window size changes, which will cause the lines to visually break in different places.
+
+A later implementation might take a range of colors and calculate steps between them depending on, e.g. the number of words in a line, so that each line appears to change uniformly between colors in a range.  Or it could even operate on characters rather than words or lines.
+
+The function should apply the appropriate face properties to each element (word, line, character) in the range, as well as a property to identify text which has been colorized (which can be used to remove colorization).  It should probably only operate on text whose face is ~default~ (by default, anyway).
+
+#+BEGIN_SRC elisp
+  (defun chromatext--chromatize-range (start end colors advance-fn)
+    "FIXME docstring"
+    (save-excursion
+      (save-restriction
+        (narrow-to-region start end)
+        (cl-loop for color in colors
+                 until (eobp)
+                 for start = (point)
+                 when (funcall advance-fn)
+                 for end = (point)
+                 do (progn
+                      (add-text-properties
+                       start end (list :chromatext-chromatized t))
+                      (add-face-text-property
+                       start end (list :foreground color)))))))
+
+  (defun chromatext-chromatize-org-entry ()
+    "FIXME docstring"
+    (interactive)
+    (let ((colors (-cycle (list "red" "white" "blue")))
+          (start (org-entry-beginning-position))
+          (end (org-entry-end-position))
+          (advance-fn #'forward-word))
+      (chromatext--chromatize-range start end colors advance-fn)))
+#+END_SRC
