@@ -131,18 +131,16 @@ If START and END are nil, operate on the whole buffer."
   (interactive)
   (let ((buffer-undo-list t))
     (save-excursion
-      (save-restriction
-        (narrow-to-region start end)
-        (unless (get-text-property (point) :chromatext-chromatized)
-          (goto-char (next-single-property-change start :chromatext-chromatized)))
-        (cl-loop until (eobp)
-                 for start = (point)
-                 for end = (or (next-single-property-change start :chromatext-chromatized)
-                               (point-max))
-                 do (let ((face (get-text-property (point) 'face)))
-                      (remove-list-of-text-properties start end '(:chromatext-chromatized face))
-                      (add-text-properties start end (list 'face (cddr face)))
-                      (goto-char end)))))))
+      (unless (get-text-property (point) :chromatext-chromatized)
+        (goto-char (next-single-property-change start :chromatext-chromatized)))
+      (cl-loop until (>= (point) end)
+               for start = (point)
+               for end = (or (next-single-property-change start :chromatext-chromatized)
+                             (point-max))
+               do (let ((face (get-text-property (point) 'face)))
+                    (remove-list-of-text-properties start end '(:chromatext-chromatized face))
+                    (add-text-properties start end (list 'face (cddr face)))
+                    (goto-char end))))))
 
 ;;;;; Support
 
@@ -154,34 +152,30 @@ an infinitely cycling list of color pairs."
   (let ((color-pairs (or color-pairs
                          chromatext-color-pairs)))
     (save-excursion
-      (save-restriction
-        (narrow-to-region start end)
-        (goto-char (point-min))
-        (cl-loop for (start-color end-color) in color-pairs
-                 until (eobp)
-                 do (progn
-                      ;; Skip blank lines
-                      (while (looking-at (rx bol eol))
-                        (funcall advance-fn)))
-                 do (progn
-                      (chromatext--chromatize-words (point-at-bol) (point-at-eol) start-color end-color)
-                      (funcall advance-fn)))))))
+      (goto-char (point-min))
+      (cl-loop for (start-color end-color) in color-pairs
+               until (>= (point) end)
+               do (progn
+                    ;; Skip blank lines
+                    (while (looking-at (rx bol eol))
+                      (funcall advance-fn)))
+               do (progn
+                    (chromatext--chromatize-words (point-at-bol) (point-at-eol) start-color end-color)
+                    (funcall advance-fn))))))
 
 (defun chromatext--chromatize-words (start end start-color end-color)
   "Apply colors from START-COLOR to END-COLOR to words between START and END."
   (save-excursion
-    (save-restriction
-      (narrow-to-region start end)
-      (cl-loop with colors = (color-gradient (color-name-to-rgb start-color) (color-name-to-rgb end-color)
-                                             (chromatext--count-words))
-               for color in colors
-               until (eobp)
-               for start = (point)
-               for end = (progn
-                           (forward-word 1)
-                           (point))
-               for color = (apply #'color-rgb-to-hex color)
-               do (chromatext--colorize-region start end color)))))
+    (cl-loop with colors = (color-gradient (color-name-to-rgb start-color) (color-name-to-rgb end-color)
+                                           (chromatext--count-words))
+             for color in colors
+             until (>= (point) end)
+             for start = (point)
+             for end = (progn
+                         (forward-word 1)
+                         (point))
+             for color = (apply #'color-rgb-to-hex color)
+             do (chromatext--colorize-region start end color))))
 
 (defun chromatext--count-words ()
   "Return number of words in buffer.
@@ -192,7 +186,7 @@ Typically used with narrowing."
       (cl-loop until (eobp)
                count (forward-word 1)))))
 
-(defun chromatext--colorize-region (start end color)
+(defsubst chromatext--colorize-region (start end color)
   "Apply COLOR to text between START and END."
   (add-text-properties
    start end (list :chromatext-chromatized t))
